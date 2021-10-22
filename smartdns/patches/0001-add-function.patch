@@ -1,5 +1,5 @@
---- a/etc/init.d/smartdns	2021-09-15 21:03:19.000000000 -0700
-+++ b/etc/init.d/smartdns	2021-10-21 23:33:57.000000000 -0700
+--- a/package/openwrt/files/etc/init.d/smartdns	2021-09-15 21:03:19.000000000 -0700
++++ b/package/openwrt/files/etc/init.d/smartdns	2021-10-21 23:33:57.000000000 -0700
 @@ -206,6 +206,56 @@
  	conf_append "$SERVER" "$DNS_ADDRESS $ADDITIONAL_ARGS $addition_arg"
  }
