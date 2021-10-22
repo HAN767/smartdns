@@ -1,0 +1,81 @@
+--- a/etc/init.d/smartdns	2021-09-15 21:03:19.000000000 -0700
++++ b/etc/init.d/smartdns	2021-10-21 23:33:57.000000000 -0700
+@@ -206,6 +206,56 @@
+ 	conf_append "$SERVER" "$DNS_ADDRESS $ADDITIONAL_ARGS $addition_arg"
+ }
+ 
++load_first_server()
++{
++	local section="$1"
++	local ARGS=""
++	local ADDR=""
++
++	config_get_bool firstdns_enabled "$section" "enabled" "0"
++	[ "$firstdns_enabled" = "0" ] && return
++
++	config_get firstdns_port "$section" "port" "6553"
++
++	config_get_bool firstdns_no_speed_check "$section" "firstdns_no_speed_check" "0"
++	[ "$firstdns_no_speed_check" = "1" ] && ARGS="$ARGS -no-speed-check"
++
++	config_get firstdns_server_group "$section" "firstdns_server_group" ""
++	[ -z "$firstdns_server_group" ] || ARGS="$ARGS -group $firstdns_server_group"
++
++	config_get_bool firstdns_no_rule_addr "$section" "firstdns_no_rule_addr" "0"
++	[ "$firstdns_no_rule_addr" = "1" ] && ARGS="$ARGS -no-rule-addr"
++
++	config_get_bool firstdns_no_rule_nameserver "$section" "firstdns_no_rule_nameserver" "0"
++	[ "$firstdns_no_rule_nameserver" = "1" ] && ARGS="$ARGS -no-rule-nameserver"
++
++	config_get_bool firstdns_no_rule_ipset "$section" "firstdns_no_rule_ipset" "0"
++	[ "$firstdns_no_rule_ipset" = "1" ] && ARGS="$ARGS -no-rule-ipset"
++
++	config_get_bool firstdns_no_rule_soa "$section" "firstdns_no_rule_soa" "0"
++	[ "$firstdns_no_rule_soa" = "1" ] && ARGS="$ARGS -no-rule-soa"
++
++	config_get_bool firstdns_no_dualstack_selection "$section" "firstdns_no_dualstack_selection" "0"
++	[ "$firstdns_no_dualstack_selection" = "1" ] && ARGS="$ARGS -no-dualstack-selection"
++
++	config_get_bool firstdns_no_cache "$section" "firstdns_no_cache" "0"
++	[ "$firstdns_no_cache" = "1" ] && ARGS="$ARGS -no-cache"
++
++	config_get_bool firstdns_force_aaaa_soa "$section" "firstdns_force_aaaa_soa" "0"
++	[ "$firstdns_force_aaaa_soa" = "1" ] && ARGS="$ARGS -force-aaaa-soa"
++
++	config_get ipv6_server "$section" "ipv6_server" "1"
++	if [ "$ipv6_server" = "1" ]; then
++		ADDR="[::]"
++	else
++		ADDR=""
++	fi
++
++	conf_append "bind" "$ADDR:$firstdns_port $ARGS"
++	config_get_bool "firstdns_tcp_server" "$section" "tcp_server" "1"
++	[ "$firstdns_tcp_server" = "1" ] && conf_append "bind-tcp" "$ADDR:$firstdns_port $ARGS"
++}
++
+ load_second_server()
+ {
+ 	local section="$1"
+@@ -275,19 +325,9 @@
+ 	config_get port "$section" "port" "6053"
+ 	config_get ipv6_server "$section" "ipv6_server" "1"
+ 	config_get tcp_server "$section" "tcp_server" "1"
+-	if [ "$ipv6_server" = "1" ]; then
+-		conf_append "bind" "[::]:$port"
+-	else
+-		conf_append "bind" ":$port"
+-	fi
++	
++	load_first_server $section 
+ 
+-	[ "$tcp_server" = "1" ] && {
+-		if [ "$ipv6_server" = "1" ]; then
+-			conf_append "bind-tcp" "[::]:$port"
+-		else
+-			conf_append "bind-tcp" ":$port"
+-		fi
+-	}
+ 	config_get dualstack_ip_selection "$section" "dualstack_ip_selection" "0"
+ 	[ "$dualstack_ip_selection" = "1" ] && conf_append "dualstack-ip-selection" "yes"
+ 
